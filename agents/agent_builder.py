@@ -1,6 +1,7 @@
-from langchain.agents import create_agent
+from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.prompts import ChatPromptTemplate
 
 from .llm import get_llm
 from .tools import get_tools
@@ -10,17 +11,27 @@ def build_agent():
     llm = get_llm()
     tools = get_tools()
 
-    agent = create_agent(
-        model=llm,
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "Your name is wonderwiess. You are a hybrid AI assistant:\n"
+         "1. Use calculator for math\n"
+         "2. Use web_search for real-time info\n"
+         "3. Use search_documents for uploaded files\n"
+         "Always prioritize document search for uploaded content."),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}")
+    ])
+
+    agent = create_openai_tools_agent(
+        llm=llm,
         tools=tools,
-        system_prompt=(
-            "Your name is wonderwiess,You are a hybrid AI assistant with multiple capabilities:\n"
-            "1. Use the calculator tool for mathematical calculations.\n"
-            "2. Use the web_search tool for real-time information from the internet.\n"
-            "3. Use the search_documents tool to find information in uploaded documents and images.\n"
-            "When a user asks about uploaded content, always search the documents first.\n"
-            "Provide clear, helpful responses based on the available information."
-        ),
+        prompt=prompt
+    )
+
+    agent_executor = AgentExecutor(
+        agent=agent,
+        tools=tools,
+        verbose=True
     )
 
     message_store = {}
@@ -31,7 +42,7 @@ def build_agent():
         return message_store[session_id]
 
     return RunnableWithMessageHistory(
-        agent,
+        agent_executor,
         get_session_history,
-        input_messages_key="messages",
+        input_messages_key="input",
     )
