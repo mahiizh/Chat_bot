@@ -89,11 +89,7 @@ if user_input:
 
     with st.spinner("Thinking..."):
         response = st.session_state.agent.invoke(
-            {
-                "messages": [
-                    {"role": "user", "content": user_input}
-                ]
-            },
+               {"input": user_input},
             config={"configurable": {"session_id": st.session_state.session_id}},
         )
 
