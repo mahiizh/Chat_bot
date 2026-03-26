@@ -93,7 +93,7 @@ if user_input:
             config={"configurable": {"session_id": st.session_state.session_id}},
         )
 
-        output = response["messages"][-1].content
+        output = response["output"]
 
     st.chat_message("assistant").write(output)
     st.session_state.messages.append({"role": "assistant", "content": output})
